@@ -1,1 +1,42 @@
-{% extends 'base.html' %}{% block content %}<section class="auth-card"><div class="brand"><span class="brand-mark">S</span><span><b>sellwise</b><small>SALES MANAGEMENT</small></span></div><p class="eyebrow">WELCOME BACK</p><h1>Sign in</h1><p class="muted">Manage your business in one place.</p><form method="post"><label>Email<input type="email" name="email" required value="admin@example.com"></label><label>Password<input type="password" name="password" required value="Admin@123"></label><button class="primary wide">Sign in</button></form><p class="muted tiny">Demo account: admin@example.com / Admin@123</p></section>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<section class="auth-card">
+ <div class="brand">
+  <span class="brand-mark">
+   S
+  </span>
+  <span>
+   <b>
+    sellwise
+   </b>
+   <small>
+    SALES MANAGEMENT
+   </small>
+  </span>
+ </div>
+ <p class="eyebrow">
+  WELCOME BACK
+ </p>
+ <h1>
+  Sign in
+ </h1>
+ <p class="muted">
+  Manage your business in one place.
+ </p>
+ <form method="post">
+  <label>
+   Email
+   <input name="email" required="" type="email" value="admin@example.com"/>
+  </label>
+  <label>
+   Password
+   <input name="password" required="" type="password" value="Admin@123"/>
+  </label>
+  <button class="primary wide">
+   Sign in
+  </button>
+ </form>
+ <p class="muted tiny">
+  Demo account: admin@example.com / Admin@123
+ </p>
+</section>
+{% endblock %}

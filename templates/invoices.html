@@ -1,1 +1,94 @@
-{% extends 'base.html' %}{% block content %}<header class="page-head"><div><p class="eyebrow">BILLING</p><h1>Invoices</h1><p class="muted">Sales invoices and payment status.</p></div><button class="secondary" onclick="window.print()">Print page</button></header><section class="panel"><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Phone</th><th>Item</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody>{% for s in sales %}<tr><td>#INV-{{ '%04d'|format(s.id) }}</td><td>{{ s.sale_date }}</td><td>{{ s.customer.name }}</td><td>{{ s.customer.phone }}</td><td>{{ s.product.name }} × {{ s.quantity }}</td><td>₹{{ '%.2f'|format(s.total) }}</td><td>₹{{ '%.2f'|format(s.paid) }}</td><td>₹{{ '%.2f'|format(s.due) }}</td><td>{{ s.status }}</td></tr>{% else %}<tr><td colspan="9" class="empty">Invoices will appear after you record a sale.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<header class="page-head">
+ <div>
+  <p class="eyebrow">
+   BILLING
+  </p>
+  <h1>
+   Invoices
+  </h1>
+  <p class="muted">
+   Sales invoices and payment status.
+  </p>
+ </div>
+ <button class="secondary" onclick="window.print()">
+  Print page
+ </button>
+</header>
+<section class="panel">
+ <div class="table-wrap">
+  <table>
+   <thead>
+    <tr>
+     <th>
+      Invoice
+     </th>
+     <th>
+      Date
+     </th>
+     <th>
+      Customer
+     </th>
+     <th>
+      Phone
+     </th>
+     <th>
+      Item
+     </th>
+     <th>
+      Total
+     </th>
+     <th>
+      Paid
+     </th>
+     <th>
+      Due
+     </th>
+     <th>
+      Status
+     </th>
+    </tr>
+   </thead>
+   <tbody>
+    {% for s in sales %}
+    <tr>
+     <td>
+      #INV-{{ '%04d'|format(s.id) }}
+     </td>
+     <td>
+      {{ s.sale_date }}
+     </td>
+     <td>
+      {{ s.customer.name }}
+     </td>
+     <td>
+      {{ s.customer.phone }}
+     </td>
+     <td>
+      {{ s.product.name }} × {{ s.quantity }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.total) }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.paid) }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.due) }}
+     </td>
+     <td>
+      {{ s.status }}
+     </td>
+    </tr>
+    {% else %}
+    <tr>
+     <td class="empty" colspan="9">
+      Invoices will appear after you record a sale.
+     </td>
+    </tr>
+    {% endfor %}
+   </tbody>
+  </table>
+ </div>
+</section>
+{% endblock %}

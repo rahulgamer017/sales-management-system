@@ -1,3 +1,56 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ title or 'Sellwise' }} · Sales Management</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}"></head>
-<body>{% if session.get('user_id') %}<aside class="sidebar"><a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark">S</span><span><b>sellwise</b><small>SALES MANAGEMENT</small></span></a><p class="nav-label">WORKSPACE</p>{% for endpoint,label in [('dashboard','Dashboard'),('products','Products'),('customers','Customers'),('sales','Sales'),('invoices','Invoices'),('reports','Reports'),('settings','Settings')] %}<a class="nav-link {% if request.endpoint==endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>{% endfor %}<div class="sidebar-bottom"><b>{{ session.get('user_name','Admin') }}</b><small>Administrator</small><a href="{{ url_for('logout') }}">Log out</a></div></aside>{% endif %}<main class="{% if session.get('user_id') %}main{% else %}auth-main{% endif %}">{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}{% block content %}{% endblock %}</main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   {{ title or 'Sellwise' }} · Sales Management
+  </title>
+  <link href="{{ url_for('static',filename='style.css') }}" rel="stylesheet"/>
+ </head>
+ <body>
+  {% if session.get('user_id') %}
+  <aside class="sidebar">
+   <a class="brand" href="{{ url_for('dashboard') }}">
+    <span class="brand-mark">
+     S
+    </span>
+    <span>
+     <b>
+      sellwise
+     </b>
+     <small>
+      SALES MANAGEMENT
+     </small>
+    </span>
+   </a>
+   <p class="nav-label">
+    WORKSPACE
+   </p>
+   {% for endpoint,label in [('dashboard','Dashboard'),('products','Products'),('customers','Customers'),('sales','Sales'),('invoices','Invoices'),('reports','Reports'),('settings','Settings')] %}
+   <a class="nav-link {% if request.endpoint==endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}">
+    {{ label }}
+   </a>
+   {% endfor %}
+   <div class="sidebar-bottom">
+    <b>
+     {{ session.get('user_name','Admin') }}
+    </b>
+    <small>
+     Administrator
+    </small>
+    <a href="{{ url_for('logout') }}">
+     Log out
+    </a>
+   </div>
+  </aside>
+  {% endif %}
+  <main class="{% if session.get('user_id') %}main{% else %}auth-main{% endif %}">
+   {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}
+   <div class="flash {{ category }}">
+    {{ message }}
+   </div>
+   {% endfor %}{% endwith %}{% block content %}{% endblock %}
+  </main>
+ </body>
+</html>

@@ -1,1 +1,149 @@
-{% extends 'base.html' %}{% block content %}<header class="page-head"><div><p class="eyebrow">TRANSACTIONS</p><h1>Sales</h1><p class="muted">Record sales and track payments.</p></div></header><section class="panel"><h2>Record a sale</h2>{% if not customers or not products %}<p class="empty">Add at least one customer and one in-stock product first.</p>{% else %}<form method="post" class="form-grid"><label>Customer *<select name="customer_id" required>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }} — {{ c.phone }}</option>{% endfor %}</select></label><label>Product *<select name="product_id" required>{% for p in products %}<option value="{{ p.id }}">{{ p.name }} ({{ p.stock }} in stock) — ₹{{ '%.2f'|format(p.price) }}</option>{% endfor %}</select></label><label>Quantity *<input type="number" name="quantity" min="1" required value="1"></label><label>Amount paid (₹)<input type="number" name="paid" min="0" step=".01" value="0" required></label><div class="form-action"><button class="primary">Save sale</button></div></form>{% endif %}</section><section class="panel"><h2>Sales history</h2><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Product</th><th>Qty</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>Record payment</th></tr></thead><tbody>{% for s in sales %}<tr><td>#INV-{{ '%04d'|format(s.id) }}</td><td>{{ s.customer.name }}</td><td>{{ s.product.name }}</td><td>{{ s.quantity }}</td><td>₹{{ '%.2f'|format(s.total) }}</td><td>₹{{ '%.2f'|format(s.paid) }}</td><td class="{% if s.due>0 %}due{% endif %}">₹{{ '%.2f'|format(s.due) }}</td><td><span class="pill">{{ s.status }}</span></td><td>{% if s.due>0 %}<form method="post" action="{{ url_for('payment',id=s.id) }}" class="inline-form"><input aria-label="Payment amount" name="amount" type="number" min=".01" max="{{ s.due }}" step=".01" required placeholder="₹"><button class="small-link">Add</button></form>{% else %}—{% endif %}</td></tr>{% else %}<tr><td colspan="9" class="empty">No sales yet.</td></tr>{% endfor %}</tbody></table></div></section>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<header class="page-head">
+ <div>
+  <p class="eyebrow">
+   TRANSACTIONS
+  </p>
+  <h1>
+   Sales
+  </h1>
+  <p class="muted">
+   Record sales and track payments.
+  </p>
+ </div>
+</header>
+<section class="panel">
+ <h2>
+  Record a sale
+ </h2>
+ {% if not customers or not products %}
+ <p class="empty">
+  Add at least one customer and one in-stock product first.
+ </p>
+ {% else %}
+ <form class="form-grid" method="post">
+  <label>
+   Customer *
+   <select name="customer_id" required="">
+    {% for c in customers %}
+    <option value="{{ c.id }}">
+     {{ c.name }} — {{ c.phone }}
+    </option>
+    {% endfor %}
+   </select>
+  </label>
+  <label>
+   Product *
+   <select name="product_id" required="">
+    {% for p in products %}
+    <option value="{{ p.id }}">
+     {{ p.name }} ({{ p.stock }} in stock) — ₹{{ '%.2f'|format(p.price) }}
+    </option>
+    {% endfor %}
+   </select>
+  </label>
+  <label>
+   Quantity *
+   <input min="1" name="quantity" required="" type="number" value="1"/>
+  </label>
+  <label>
+   Amount paid (₹)
+   <input min="0" name="paid" required="" step=".01" type="number" value="0"/>
+  </label>
+  <div class="form-action">
+   <button class="primary">
+    Save sale
+   </button>
+  </div>
+ </form>
+ {% endif %}
+</section>
+<section class="panel">
+ <h2>
+  Sales history
+ </h2>
+ <div class="table-wrap">
+  <table>
+   <thead>
+    <tr>
+     <th>
+      Invoice
+     </th>
+     <th>
+      Customer
+     </th>
+     <th>
+      Product
+     </th>
+     <th>
+      Qty
+     </th>
+     <th>
+      Total
+     </th>
+     <th>
+      Paid
+     </th>
+     <th>
+      Due
+     </th>
+     <th>
+      Status
+     </th>
+     <th>
+      Record payment
+     </th>
+    </tr>
+   </thead>
+   <tbody>
+    {% for s in sales %}
+    <tr>
+     <td>
+      #INV-{{ '%04d'|format(s.id) }}
+     </td>
+     <td>
+      {{ s.customer.name }}
+     </td>
+     <td>
+      {{ s.product.name }}
+     </td>
+     <td>
+      {{ s.quantity }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.total) }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.paid) }}
+     </td>
+     <td class="{% if s.due&gt;0 %}due{% endif %}">
+      ₹{{ '%.2f'|format(s.due) }}
+     </td>
+     <td>
+      <span class="pill">
+       {{ s.status }}
+      </span>
+     </td>
+     <td>
+      {% if s.due&gt;0 %}
+      <form action="{{ url_for('payment',id=s.id) }}" class="inline-form" method="post">
+       <input aria-label="Payment amount" max="{{ s.due }}" min=".01" name="amount" placeholder="₹" required="" step=".01" type="number"/>
+       <button class="small-link">
+        Add
+       </button>
+      </form>
+      {% else %}—{% endif %}
+     </td>
+    </tr>
+    {% else %}
+    <tr>
+     <td class="empty" colspan="9">
+      No sales yet.
+     </td>
+    </tr>
+    {% endfor %}
+   </tbody>
+  </table>
+ </div>
+</section>
+{% endblock %}

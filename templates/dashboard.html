@@ -1,1 +1,117 @@
-{% extends 'base.html' %}{% block content %}<header class="page-head"><div><p class="eyebrow">OVERVIEW</p><h1>Good day, {{ session.get('user_name','Admin') }} ✨</h1><p class="muted">Here's what's happening with your business.</p></div><a class="primary button-link" href="{{ url_for('sales') }}">New sale</a></header><section class="stats"><article class="stat"><span>Total revenue</span><strong>₹{{ '%.2f'|format(revenue) }}</strong></article><article class="stat"><span>Total orders</span><strong>{{ order_count }}</strong></article><article class="stat"><span>Products</span><strong>{{ product_count }}</strong></article><article class="stat"><span>Customers</span><strong>{{ customer_count }}</strong></article><article class="stat"><span>Pending payments</span><strong>₹{{ '%.2f'|format(due_total) }}</strong></article></section><section class="panel"><h2>Recent sales</h2>{% if recent %}<div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr></thead><tbody>{% for s in recent %}<tr><td>#INV-{{ '%04d'|format(s.id) }}</td><td>{{ s.customer.name }}</td><td>{{ s.sale_date }}</td><td>₹{{ '%.2f'|format(s.total) }}</td><td><span class="pill">{{ s.status }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="empty">No sales yet. Add a customer and product, then record your first sale.</p>{% endif %}</section>{% endblock %}
+{% extends 'base.html' %}{% block content %}
+<header class="page-head">
+ <div>
+  <p class="eyebrow">
+   OVERVIEW
+  </p>
+  <h1>
+   Good day, {{ session.get('user_name','Admin') }} ✨
+  </h1>
+  <p class="muted">
+   Here's what's happening with your business.
+  </p>
+ </div>
+ <a class="primary button-link" href="{{ url_for('sales') }}">
+  New sale
+ </a>
+</header>
+<section class="stats">
+ <article class="stat">
+  <span>
+   Total revenue
+  </span>
+  <strong>
+   ₹{{ '%.2f'|format(revenue) }}
+  </strong>
+ </article>
+ <article class="stat">
+  <span>
+   Total orders
+  </span>
+  <strong>
+   {{ order_count }}
+  </strong>
+ </article>
+ <article class="stat">
+  <span>
+   Products
+  </span>
+  <strong>
+   {{ product_count }}
+  </strong>
+ </article>
+ <article class="stat">
+  <span>
+   Customers
+  </span>
+  <strong>
+   {{ customer_count }}
+  </strong>
+ </article>
+ <article class="stat">
+  <span>
+   Pending payments
+  </span>
+  <strong>
+   ₹{{ '%.2f'|format(due_total) }}
+  </strong>
+ </article>
+</section>
+<section class="panel">
+ <h2>
+  Recent sales
+ </h2>
+ {% if recent %}
+ <div class="table-wrap">
+  <table>
+   <thead>
+    <tr>
+     <th>
+      Invoice
+     </th>
+     <th>
+      Customer
+     </th>
+     <th>
+      Date
+     </th>
+     <th>
+      Total
+     </th>
+     <th>
+      Status
+     </th>
+    </tr>
+   </thead>
+   <tbody>
+    {% for s in recent %}
+    <tr>
+     <td>
+      #INV-{{ '%04d'|format(s.id) }}
+     </td>
+     <td>
+      {{ s.customer.name }}
+     </td>
+     <td>
+      {{ s.sale_date }}
+     </td>
+     <td>
+      ₹{{ '%.2f'|format(s.total) }}
+     </td>
+     <td>
+      <span class="pill">
+       {{ s.status }}
+      </span>
+     </td>
+    </tr>
+    {% endfor %}
+   </tbody>
+  </table>
+ </div>
+ {% else %}
+ <p class="empty">
+  No sales yet. Add a customer and product, then record your first sale.
+ </p>
+ {% endif %}
+</section>
+{% endblock %}
