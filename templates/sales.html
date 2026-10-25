@@ -1,149 +1,19 @@
 {% extends 'base.html' %}{% block content %}
-<header class="page-head">
- <div>
-  <p class="eyebrow">
-   TRANSACTIONS
-  </p>
-  <h1>
-   Sales
-  </h1>
-  <p class="muted">
-   Record sales and track payments.
-  </p>
- </div>
-</header>
-<section class="panel">
- <h2>
-  Record a sale
- </h2>
- {% if not customers or not products %}
- <p class="empty">
-  Add at least one customer and one in-stock product first.
- </p>
- {% else %}
- <form class="form-grid" method="post">
-  <label>
-   Customer *
-   <select name="customer_id" required="">
-    {% for c in customers %}
-    <option value="{{ c.id }}">
-     {{ c.name }} — {{ c.phone }}
-    </option>
-    {% endfor %}
-   </select>
-  </label>
-  <label>
-   Product *
-   <select name="product_id" required="">
-    {% for p in products %}
-    <option value="{{ p.id }}">
-     {{ p.name }} ({{ p.stock }} in stock) — ₹{{ '%.2f'|format(p.price) }}
-    </option>
-    {% endfor %}
-   </select>
-  </label>
-  <label>
-   Quantity *
-   <input min="1" name="quantity" required="" type="number" value="1"/>
-  </label>
-  <label>
-   Amount paid (₹)
-   <input min="0" name="paid" required="" step=".01" type="number" value="0"/>
-  </label>
-  <div class="form-action">
-   <button class="primary">
-    Save sale
-   </button>
-  </div>
- </form>
- {% endif %}
-</section>
-<section class="panel">
- <h2>
-  Sales history
- </h2>
- <div class="table-wrap">
-  <table>
-   <thead>
-    <tr>
-     <th>
-      Invoice
-     </th>
-     <th>
-      Customer
-     </th>
-     <th>
-      Product
-     </th>
-     <th>
-      Qty
-     </th>
-     <th>
-      Total
-     </th>
-     <th>
-      Paid
-     </th>
-     <th>
-      Due
-     </th>
-     <th>
-      Status
-     </th>
-     <th>
-      Record payment
-     </th>
-    </tr>
-   </thead>
-   <tbody>
-    {% for s in sales %}
-    <tr>
-     <td>
-      #INV-{{ '%04d'|format(s.id) }}
-     </td>
-     <td>
-      {{ s.customer.name }}
-     </td>
-     <td>
-      {{ s.product.name }}
-     </td>
-     <td>
-      {{ s.quantity }}
-     </td>
-     <td>
-      ₹{{ '%.2f'|format(s.total) }}
-     </td>
-     <td>
-      ₹{{ '%.2f'|format(s.paid) }}
-     </td>
-     <td class="{% if s.due > 0 %}due{% endif %}">
-      ₹{{ '%.2f'|format(s.due) }}
-     </td>
-     <td>
-      <span class="pill">
-       {{ s.status }}
-      </span>
-     </td>
-     <td>
-      {% if s.due > 0 %}
-      <form action="{{ url_for('payment',id=s.id) }}" class="inline-form" method="post">
-       <input aria-label="Payment amount" max="{{ s.due }}" min=".01" name="amount" placeholder="₹" required="" step=".01" type="number"/>
-       <button class="small-link">
-        Add
-       </button>
-      </form>
-      {% else %}—{% endif %}
-     </td>
-    </tr>
-    {% else %}
-    <tr>
-     <td class="empty" colspan="9">
-      No sales yet.
-     </td>
-    </tr>
-    {% endfor %}
-   </tbody>
-  </table>
- </div>
-</section>
+<header class="page-head page-head-row"><div><p class="eyebrow">POINT OF SALE</p><h1>Cashier</h1><p class="muted">Fast checkout for walk-in and registered customers.</p></div><span class="live-tag">● Ready to sell</span></header>
+<div class="cashier-layout">
+<section class="panel cashier-panel"><div class="section-heading"><div><h2>New sale</h2><p class="muted">Add one or more products to this invoice.</p></div><span class="step-badge">01</span></div>
+<form method="post" id="sale-form">
+<div class="form-grid cashier-fields"><label>Customer <span class="muted">(optional)</span><select name="customer_id"><option value="">Walk-in customer</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.name }} — {{ c.phone }}</option>{% endfor %}</select></label><label>Customer name <span class="muted">(walk-in)</span><input name="walkin_name" placeholder="Optional name" maxlength="150"></label><label>Phone <span class="muted">(optional)</span><input name="walkin_phone" placeholder="Phone number" type="tel" maxlength="30"></label></div>
+<div class="product-picker"><label for="product-picker">Find a product</label><select id="product-picker"><option value="">Select a product to add…</option>{% for p in products %}<option value="{{ p.id }}" data-name="{{ p.name|e }}" data-price="{{ p.price }}" data-stock="{{ p.stock }}">{{ p.name }} · ₹{{ '%.2f'|format(p.price) }} · {{ p.stock }} in stock</option>{% endfor %}</select><button class="primary" id="add-product" type="button">＋ Add item</button></div>
+<div class="table-wrap cart-wrap"><table class="cart-table"><thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Amount</th><th></th></tr></thead><tbody id="cart-items"><tr id="empty-cart"><td colspan="5" class="empty">Your cart is empty. Add a product to begin.</td></tr></tbody></table></div>
+<div class="checkout-grid"><div class="payment-box"><h3>Payment details</h3><label>Payment method<select name="payment_method"><option value="Cash">Cash · Offline</option><option value="UPI">UPI · Online</option><option value="Card">Card · Online</option><option value="Bank transfer">Bank transfer · Online</option><option value="Other">Other</option></select></label><label>Amount received (₹)<input type="number" name="paid" id="paid" min="0" step="0.01" value="0" required></label><div class="quick-amounts"><button type="button" data-paid="total">Full amount</button><button type="button" data-paid="zero">Pending / later</button></div></div><div class="total-box"><p>Items <strong id="item-count">0</strong></p><p>Subtotal <strong id="subtotal">₹0.00</strong></p><div class="grand-total"><span>Total due</span><strong id="grand-total">₹0.00</strong></div><button class="primary checkout-button" type="submit">Complete sale →</button><p class="muted tiny">Stock updates when the sale is saved.</p></div></div>
+</form></section>
+<aside class="panel cashier-help"><div class="help-icon">✓</div><h3>Quick checkout</h3><p class="muted">No customer account is needed. Walk-in sales are recorded under the optional customer details you provide.</p><div class="help-stat"><span>Products available</span><strong>{{ products|length }}</strong></div><div class="help-stat"><span>Registered customers</span><strong>{{ customers|length }}</strong></div><a class="secondary-button" href="{{ url_for('products') }}">Manage stock</a></aside>
+</div>
+<section class="panel"><div class="section-heading"><div><h2>Recent sales</h2><p class="muted">Latest invoices and payment balances.</p></div><a class="small-link" href="{{ url_for('invoices') }}">All invoices →</a></div><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Product</th><th>Qty</th><th>Total</th><th>Paid</th><th>Due</th><th>Payment</th><th>Status</th><th>Record payment</th></tr></thead><tbody>{% for s in sales %}<tr><td><b>{{ s.invoice_no or ('INV-%04d'|format(s.id)) }}</b></td><td>{{ s.customer.name if s.customer else 'Walk-in' }}</td><td>{{ s.product.name if s.product else '—' }}</td><td>{{ s.quantity }}</td><td>₹{{ '%.2f'|format(s.total) }}</td><td>₹{{ '%.2f'|format(s.paid) }}</td><td class="{% if s.due > 0 %}due{% endif %}">₹{{ '%.2f'|format(s.due) }}</td><td><span class="pill">{{ s.payment_method or '—' }}</span></td><td><span class="pill {{ 'paid' if s.due == 0 else 'pending' }}">{{ s.status }}</span></td><td>{% if s.due > 0 %}<form action="{{ url_for('payment',id=s.id) }}" class="inline-form" method="post"><input aria-label="Payment amount" max="{{ s.due }}" min=".01" name="amount" placeholder="₹" required step=".01" type="number"/><select name="payment_method" aria-label="Payment method"><option>Cash</option><option>UPI</option><option>Card</option><option>Bank transfer</option></select><button class="small-link">Add</button></form>{% else %}—{% endif %}</td></tr>{% else %}<tr><td class="empty" colspan="10">No sales yet. Your completed checkouts will appear here.</td></tr>{% endfor %}</tbody></table></div></section>
+<script>
+(() => { const picker=document.getElementById('product-picker'), cart=document.getElementById('cart-items'), form=document.getElementById('sale-form'), paid=document.getElementById('paid'); const items=new Map(); const money=n=>'₹'+Number(n||0).toFixed(2);
+function render(){cart.innerHTML='';let count=0,total=0;if(!items.size){cart.innerHTML='<tr><td colspan="5" class="empty">Your cart is empty. Add a product to begin.</td></tr>';}items.forEach((p,id)=>{count+=p.qty;total+=p.qty*p.price;const tr=document.createElement('tr');tr.innerHTML=`<td><strong>${p.name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'<','>':'>','"':'&quot;',"'":'&#39;'}[c]))}</strong><small class="stock-note">${p.stock} in stock</small><input type="hidden" name="product_id[]" value="${id}"><input type="hidden" name="quantity[]" value="${p.qty}"></td><td>${money(p.price)}</td><td><div class="qty-control"><button type="button" data-qty="-1" data-id="${id}">−</button><span>${p.qty}</span><button type="button" data-qty="1" data-id="${id}" ${p.qty>=p.stock?'disabled':''}>＋</button></div></td><td><strong>${money(p.qty*p.price)}</strong></td><td><button type="button" class="remove-item" data-remove="${id}" aria-label="Remove ${p.name}">×</button></td>`;cart.appendChild(tr)});document.getElementById('item-count').textContent=count;document.getElementById('subtotal').textContent=money(total);document.getElementById('grand-total').textContent=money(total);paid.max=total.toFixed(2);if(Number(paid.value)>total)paid.value=total.toFixed(2);}
+document.getElementById('add-product').addEventListener('click',()=>{const o=picker.selectedOptions[0];if(!o||!o.value)return;const id=o.value;if(items.has(id)){const p=items.get(id);if(p.qty<p.stock)p.qty++;}else items.set(id,{name:o.dataset.name,price:Number(o.dataset.price),stock:Number(o.dataset.stock),qty:1});picker.value='';render()});cart.addEventListener('click',e=>{const q=e.target.dataset.qty,r=e.target.dataset.remove;if(q){const p=items.get(e.target.dataset.id);p.qty+=Number(q);if(p.qty<1)items.delete(e.target.dataset.id);render()}if(r){items.delete(r);render()}});document.querySelectorAll('[data-paid]').forEach(b=>b.addEventListener('click',()=>{paid.value=b.dataset.paid==='total'?Array.from(items.values()).reduce((n,p)=>n+p.qty*p.price,0).toFixed(2):'0';}));form.addEventListener('submit',e=>{if(!items.size){e.preventDefault();alert('Please add at least one product.');return;}const total=Array.from(items.values()).reduce((n,p)=>n+p.qty*p.price,0);if(Number(paid.value)>total){e.preventDefault();alert('Amount received cannot exceed the invoice total.');}});render(); })();
+</script>
 {% endblock %}

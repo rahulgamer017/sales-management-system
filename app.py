@@ -5,12 +5,15 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+import secrets
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-this-before-deploying')
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///sales.db')
 if db_url.startswith('postgres://'):
-    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+    db_url = db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+elif db_url.startswith('postgresql://'):
+    db_url = db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -44,6 +47,8 @@ class Sale(db.Model):
     total = db.Column(db.Float, nullable=False)
     paid = db.Column(db.Float, nullable=False, default=0)
     status = db.Column(db.String(30), nullable=False, default='Pending')
+    invoice_no = db.Column(db.String(40), index=True)
+    payment_method = db.Column(db.String(40), nullable=False, default='Cash')
     sale_date = db.Column(db.Date, default=date.today)
     customer = db.relationship('Customer')
     product = db.relationship('Product')
@@ -143,26 +148,67 @@ def delete_product(id):
 @app.route('/sales', methods=['GET','POST'])
 @login_required
 def sales():
-    if request.method=='POST':
+    if request.method == 'POST':
         try:
-            customer=Customer.query.get(int(request.form['customer_id']))
-            product=Product.query.get(int(request.form['product_id']))
-            qty=int(request.form['quantity']); paid=float(request.form.get('paid','0'))
-        except (ValueError, KeyError, TypeError):
-            customer=product=None; qty=0; paid=-1
-        if not customer or not product or qty<1 or qty>product.stock or paid<0:
-            flash('Check customer, product, quantity and amount paid. Quantity must be in stock.', 'error')
-        else:
-            total=round(product.price*qty,2)
-            if paid>total: flash('Amount paid cannot exceed sale total.', 'error')
+            product_ids = request.form.getlist('product_id[]')
+            quantities = request.form.getlist('quantity[]')
+            paid = round(float(request.form.get('paid', '0')), 2)
+            customer_id = request.form.get('customer_id', '').strip()
+            method = request.form.get('payment_method', 'Cash').strip()
+            if not product_ids or len(product_ids) != len(quantities):
+                raise ValueError('Add at least one product.')
+            cart = []
+            total = 0.0
+            seen = set()
+            for raw_id, raw_qty in zip(product_ids, quantities):
+                product = Product.query.get(int(raw_id))
+                qty = int(raw_qty)
+                if not product or qty < 1 or qty > product.stock:
+                    raise ValueError('A product quantity is invalid or exceeds available stock.')
+                if product.id in seen:
+                    raise ValueError('A product appears more than once. Update its quantity in the cart.')
+                seen.add(product.id)
+                line_total = round(product.price * qty, 2)
+                cart.append((product, qty, line_total))
+                total = round(total + line_total, 2)
+            if paid < 0 or paid > total:
+                raise ValueError('Amount received must be between ₹0 and the invoice total.')
+            if customer_id:
+                customer = Customer.query.get(int(customer_id))
+                if not customer:
+                    raise ValueError('Please choose a valid customer.')
             else:
-                product.stock-=qty
-                status='Paid' if paid==total else ('Partial' if paid>0 else 'Pending')
-                db.session.add(Sale(customer_id=customer.id,product_id=product.id,quantity=qty,unit_price=product.price,total=total,paid=paid,status=status))
-                db.session.commit(); flash('Sale recorded and stock updated.', 'success')
+                walkin_name = request.form.get('walkin_name', '').strip()[:150]
+                walkin_phone = request.form.get('walkin_phone', '').strip()[:30]
+                if walkin_name or walkin_phone:
+                    customer = Customer(name=walkin_name or 'Walk-in customer', phone=walkin_phone or '—')
+                    db.session.add(customer)
+                    db.session.flush()
+                else:
+                    customer = Customer.query.filter_by(name='Walk-in customer', phone='—').first()
+                    if not customer:
+                        customer = Customer(name='Walk-in customer', phone='—')
+                        db.session.add(customer)
+                        db.session.flush()
+            invoice_no = 'INV-' + datetime.utcnow().strftime('%y%m%d%H%M%S') + '-' + secrets.token_hex(2).upper()
+            remaining_paid = paid
+            for product, qty, line_total in cart:
+                line_paid = min(line_total, round(remaining_paid, 2))
+                remaining_paid = round(remaining_paid - line_paid, 2)
+                product.stock -= qty
+                status = 'Paid' if line_paid >= line_total else ('Partial' if line_paid > 0 else 'Pending')
+                db.session.add(Sale(invoice_no=invoice_no, payment_method=method, customer_id=customer.id,
+                    product_id=product.id, quantity=qty, unit_price=product.price, total=line_total,
+                    paid=line_paid, status=status))
+            db.session.commit()
+            flash(f'Sale {invoice_no} saved. Stock updated.', 'success')
+        except (ValueError, TypeError) as exc:
+            db.session.rollback()
+            flash(str(exc) or 'Check the sale details and try again.', 'error')
         return redirect(url_for('sales'))
-    return render_template('sales.html', sales=Sale.query.order_by(Sale.id.desc()).all(),
-                           customers=Customer.query.order_by(Customer.name).all(), products=Product.query.filter(Product.stock>0).order_by(Product.name).all())
+    return render_template('sales.html', sales=Sale.query.order_by(Sale.id.desc()).limit(100).all(),
+        customers=Customer.query.filter(Customer.name != 'Walk-in customer').order_by(Customer.name).all(),
+        products=Product.query.filter(Product.stock > 0).order_by(Product.name).all())
 
 @app.route('/sales/<int:id>/payment', methods=['POST'])
 @login_required
@@ -170,9 +216,11 @@ def payment(id):
     sale=Sale.query.get_or_404(id)
     try: amount=float(request.form.get('amount','0'))
     except ValueError: amount=0
+    method=request.form.get('payment_method','Cash').strip() or 'Cash'
     if amount<=0 or amount>sale.due: flash('Enter a valid payment amount.', 'error')
     else:
         sale.paid=round(sale.paid+amount,2)
+        sale.payment_method=method
         sale.status='Paid' if sale.due==0 else 'Partial'
         db.session.commit(); flash('Payment recorded.', 'success')
     return redirect(url_for('sales'))
@@ -211,6 +259,16 @@ def init_db():
 
 with app.app_context():
     db.create_all()
+    # Lightweight additive migration for existing SQLite/PostgreSQL deployments.
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'sale' in inspector.get_table_names():
+        sale_columns = {column['name'] for column in inspector.get_columns('sale')}
+        if 'invoice_no' not in sale_columns:
+            db.session.execute(text('ALTER TABLE sale ADD COLUMN invoice_no VARCHAR(40)'))
+        if 'payment_method' not in sale_columns:
+            db.session.execute(text("ALTER TABLE sale ADD COLUMN payment_method VARCHAR(40) NOT NULL DEFAULT 'Cash'"))
+        db.session.commit()
     if not User.query.filter_by(email='admin@example.com').first():
         db.session.add(User(name='Demo Admin',email='admin@example.com',password_hash=generate_password_hash('Admin@123')))
         db.session.commit()

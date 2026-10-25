@@ -53,16 +53,16 @@
     {% for s in sales %}
     <tr>
      <td>
-      #INV-{{ '%04d'|format(s.id) }}
+      {{ s.invoice_no or ('INV-%04d'|format(s.id)) }}
      </td>
      <td>
       {{ s.sale_date }}
      </td>
      <td>
-      {{ s.customer.name }}
+      {{ s.customer.name if s.customer else 'Walk-in' }}
      </td>
      <td>
-      {{ s.customer.phone }}
+      {{ s.customer.phone if s.customer else '—' }}
      </td>
      <td>
       {{ s.product.name }} × {{ s.quantity }}
@@ -77,12 +77,15 @@
       ₹{{ '%.2f'|format(s.due) }}
      </td>
      <td>
+      {{ s.payment_method or 'Cash' }}
+     </td>
+     <td>
       {{ s.status }}
      </td>
     </tr>
     {% else %}
     <tr>
-     <td class="empty" colspan="9">
+     <td class="empty" colspan="10">
       Invoices will appear after you record a sale.
      </td>
     </tr>

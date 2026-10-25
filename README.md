@@ -1,36 +1,31 @@
-# Sales Management System (Python / Flask)
+# Sellwise — Sales Management System
 
-Responsive college-project web app with login, dashboard, products, customers, sales, invoices, reports, and settings.
+A Flask web app for small physical shops to manage products, stock, customers, sales, invoices and reports.
 
-## Demo login
-- Email: `admin@example.com`
-- Password: `Admin@123`
+## Features in this update
+- Modern responsive blue-and-white interface with dark navigation sidebar.
+- Cashier / point-of-sale page with multi-product cart and quantity controls.
+- Walk-in checkout without requiring a customer account; customer name and phone are optional.
+- Payment method selection for Cash, UPI, Card, Bank transfer or Other.
+- Full, partial and zero-payment checkout; unpaid balances remain visible as dues.
+- Stock decreases when a sale is recorded, with server-side quantity validation.
+- Invoice reference shared by all items in one checkout.
+- Additive startup migration for `invoice_no` and `payment_method` columns on existing deployments.
+- Existing product, customer, reports and invoice pages retained.
 
-Change the demo password before using real customer information.
+## Run locally
+1. Install Python 3.10+.
+2. Create and activate a virtual environment.
+3. Run `pip install -r requirements.txt`.
+4. Run `python app.py`.
+5. Open `http://127.0.0.1:5000`.
 
-## Deploy on Render
-1. Push this folder to your GitHub repository.
-2. In Render, choose **New → Web Service** and connect the repository.
-3. Build command: `pip install -r requirements.txt`
-4. Start command: `gunicorn app:app`
-5. For persistent hosted data, create a Render PostgreSQL database and set the app's `DATABASE_URL` environment variable to its internal connection URL.
-6. Set `SECRET_KEY` to a long random secret in Render environment variables.
-7. Deploy. Render gives the service a public `onrender.com` URL.
+Demo login: `admin@example.com` / `Admin@123`
 
-Free Render services may sleep after inactivity; free database availability and limits can change. Review current Render plan details before relying on it for important data.
+**Security note:** change the demo admin password and set a strong `SECRET_KEY` environment variable before using this app with real customer data. Configure a persistent PostgreSQL database for a hosted deployment; local SQLite data on ephemeral hosting may not persist.
 
-## Local testing (optional)
-`pip install -r requirements.txt` then `python app.py`. This uses a local SQLite file by default. You do not need XAMPP.
+## Deployment
+The included `Procfile` starts the app with Gunicorn. Set `DATABASE_URL` to a persistent PostgreSQL connection string and set `SECRET_KEY` in the hosting service environment. The app attempts a small additive migration on startup for the new sale fields.
 
-## Planned next changes
-
-The next development phase will expand this starter into a small-shop sales system:
-
-- One sale can contain multiple products.
-- Each customer profile will show dated invoices and product-level purchase history.
-- A customer ledger will record payments, unpaid balances, and advance credit without double-counting.
-- A separate customer registration/login portal will show only that customer's own invoices, purchases, and account balance.
-- Stock will decrease when a sale is saved.
-- Persistent PostgreSQL storage should be configured on Render before relying on production records.
-
-These are planned changes, not yet implemented in this starter ZIP.
+## Validation notes
+The Python source was checked with `py_compile`, and template comparisons were scanned for HTML-escaped operators inside Jinja templates. Full Flask route/browser integration tests could not be run in this environment because Flask dependencies could not be installed without network access. Test the app in a local environment before deploying.
