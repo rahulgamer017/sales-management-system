@@ -125,7 +125,7 @@
       </span>
      </td>
      <td>
-      {% if s.due&gt;0 %}
+      {% if s.due > 0 %}
       <form action="{{ url_for('payment',id=s.id) }}" class="inline-form" method="post">
        <input aria-label="Payment amount" max="{{ s.due }}" min=".01" name="amount" placeholder="₹" required="" step=".01" type="number"/>
        <button class="small-link">
